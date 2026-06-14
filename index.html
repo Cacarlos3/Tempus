@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tempus - Horología Clásica</title>
+    <!-- Fuentes de Alta Gama -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Montserrat:wght@300;400;500&display=swap" rel="stylesheet">
+    
+    <style>
+        /* --- VARIABLES DE DISEÑO (Estilo Minimalista y Lujoso) --- */
+        :root {
+            --bg-navy: #0a1124;
+            --bg-navy-dark: #060a17;
+            --bg-navy-light: #121c36;
+            --gold: #d4af37;
+            --gold-bright: #f3e5ab;
+            --gold-muted: #aa8c2c;
+            --text-light: #f0f4f8;
+            --text-muted: #a0aec0;
+            --font-serif: 'Cormorant Garamond', Georgia, serif;
+            --font-sans: 'Montserrat', sans-serif;
+        }
+
+        /* --- ESTILOS GENERALES --- */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            scroll-behavior: smooth;
+        }
+
+        body {
+            background-color: var(--bg-navy);
+            color: var(--text-light);
+            font-family: var(--font-sans);
+            overflow-x: hidden;
+            line-height: 1.6;
+        }
+
+        h1, h2, h3 {
+            font-family: var(--font-serif);
+            color: var(--gold);
+            font-weight: 400;
+            letter-spacing: 2px;
+        }
+
+        p {
+            font-weight: 300;
+            color: var(--text-muted);
+        }
+
+        /* --- PANTALLA DE CARGA ORIGINAL (LA QUE FUNCIONA RECTO) --- */
+        #splash-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: var(--bg-navy-dark);
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            transition: opacity 0.8s ease, filter 0.8s ease;
+        }
+
+        .splash-logo {
+            font-family: var(--font-serif);
+            font-size: 3.5rem;
+            color: var(--gold);
+            letter-spacing: 8px;
+            margin-bottom: 20px;
+            opacity: 0;
+            animation: fadeIn 1.2s forwards 0.3s;
+        }
+
+        .gear-loader {
+            width: 50px;
+            height: 50px;
+            border: 3px dashed var(--gold);
+            border-radius: 50%;
+            position: relative;
+            opacity: 0;
+            animation: fadeIn 1.2s forwards 0.3s, spin 6s linear infinite;
+        }
+
+        .gear-loader::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 15px;
+            height: 15px;
+            border: 2px solid var(--gold);
+            border-radius: 50%;
+        }
+
+        /* --- MENÚ DESPLEGABLE ADAPTATIVO (BURGER MENU) --- */
+        .burger-btn {
+            position: fixed;
+            top: 30px;
+            left: 30px;
+            width: 40px;
+            height: 30px;
+            z-index: 1001;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            background: none;
+            border: none;
+            transition: all 0.3s ease;
+        }
+
+        .burger-line {
+            width: 100%;
+            height: 3px;
+            background-color: var(--gold);
+            transition: all 0.4s ease;
+        }
+
+        /* Efecto "Sticky Thin" al hacer scroll avanzado (>80px) */
+        .scrolled.burger-btn {
+            top: 20px;
+            left: 20px;
+            height: 16px;
+            width: 26px;
+        }
+        .scrolled .burger-line {
+            height: 1.5px;
+        }
+
+        /* Animación a Cruz al abrir */
+        .burger-btn.active .line-1 { transform: translateY(14px) rotate(45deg); }
+        .burger-btn.active .line-2 { opacity: 0; }
+        .burger-btn.active .line-3 { transform: translateY(-14px) rotate(-45deg); }
+        
+        .scrolled.burger-btn.active .line-1 { transform: translateY(7px) rotate(45deg); }
+        .scrolled.burger-btn.active .line-3 { transform: translateY(-7px) rotate(-45deg); }
+
+        .nav-menu {
+            position: fixed;
+            top: 0;
+            left: -320px;
+            width: 320px;
+            height: 100vh;
+            background-color: var(--bg-navy-dark);
+            border-right: 1px solid var(--gold-muted);
+            z-index: 1000;
+            transition: left 0.5s cubic-bezier(0.77, 0, 0.175, 1);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding-left: 50px;
+        }
+
+        .nav-menu.active { left: 0; }
+
+        .nav-menu a {
+            font-family: var(--font-serif);
+            color: var(--text-light);
+            text-decoration: none;
+            font-size: 1.8rem;
+            margin: 20px 0;
+            letter-spacing: 2px;
+            transition: color 0.3s, padding-left 0.3s;
+        }
+
+        .nav-menu a:hover { color: var(--gold-bright); padding-left: 10px; }
+
+        .menu-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0,0,0,0.6);
+            z-index: 999;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.5s;
+        }
+        .menu-overlay.active { opacity: 1; pointer-events: auto; }
+
+        /* --- SECCIONES Y CONTENEDORES --- */
+        section {
+            padding: 100px 10%;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            border-bottom: 1px solid rgba(212, 175, 55, 0.1);
+        }
+
+        .section-title {
+            font-size: 2.8rem;
+            margin-bottom: 40px;
+            position: relative;
+            display: inline-block;
+        }
+
+        .section-title::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 0;
+            width: 60px;
+            height: 1px;
+            background-color: var(--gold);
+        }
+
+        /* SECCIÓN: PORTADA (HERO) */
+        #inicio {
+            text-align: center;
+            background: radial-gradient(circle, var(--bg-navy) 0%, var(--bg-navy-dark) 100%);
+            align-items: center;
+        }
+
+        .hero-logo { font-size: 5.5rem; margin-bottom: 10px; letter-spacing: 12px; }
+        .hero-divider {
+            width: 150px;
+            height: 1px;
+            background: linear-gradient(to right, transparent, var(--gold), transparent);
+            margin: 20px auto;
+        }
+        .hero-slogan { font-size: 1.5rem; letter-spacing: 6px; color: var(--gold-bright); font-style: italic; }
+
+        /* SECCIÓN: QUIÉNES SOMOS */
+        #quienes-somos .content-box { max-width: 800px; margin: 0 auto; }
+        .highlight-text {
+            font-family: var(--font-serif);
+            font-size: 1.6rem;
+            color: var(--gold-bright);
+            margin-bottom: 30px;
+            line-height: 1.4;
+        }
+
+        /* SECCIÓN: COLECCIONES */
+        .grid-colecciones {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 40px;
+            margin-top: 20px;
+        }
+
+        .card {
+            background-color: var(--bg-navy-light);
+            border: 1px solid rgba(212, 175, 55, 0.15);
+            border-radius: 4px;
+            overflow: hidden;
+            transition: transform 0.4s ease, border-color 0.4s ease;
+            display: flex;
+            flex-direction: column;
+        }
+        .card:hover { transform: translateY(-8px); border-color: var(--gold); }
+
+        .card-img-container {
+            height: 230px;
+            overflow: hidden;
+            border-bottom: 1px solid rgba(212, 175, 55, 0.15);
+            background-color: var(--bg-navy-dark);
+        }
+
+        .card-img-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .card-content { padding: 25px; flex-grow: 1; }
+        .card-title { font-size: 1.6rem; margin-bottom: 15px; }
+
+        /* SECCIÓN: TALLER */
+        .taller-layout { display: flex; flex-wrap: wrap; gap: 50px; align-items: flex-start; }
+        .taller-info { flex: 1; min-width: 300px; }
+        .taller-services { flex: 1; min-width: 300px; list-style: none; }
+        .taller-services li { font-size: 1.1rem; margin-bottom: 15px; padding-left: 30px; position: relative; }
+        .taller-services li::before { content: '—'; position: absolute; left: 0; color: var(--gold); }
+
+        /* INTERFAZ DE LAS CALCULADORAS */
+        .calc-box {
+            background-color: var(--bg-navy-light);
+            padding: 30px;
+            border: 1px solid rgba(212, 175, 55, 0.2);
+            border-radius: 4px;
+            margin-top: 30px;
+        }
+        .calc-flex { display: flex; flex-wrap: wrap; gap: 20px; margin-bottom: 15px; }
+        .calc-field { flex: 1; min-width: 200px; display: flex; flex-direction: column; }
+        .calc-field label { font-family: var(--font-serif); color: var(--gold-bright); margin-bottom: 8px; font-size: 1.1rem; }
+        
+        .calc-input {
+            background: var(--bg-navy-dark);
+            border: 1px solid var(--gold-muted);
+            color: #fff;
+            padding: 12px;
+            font-size: 1rem;
+            border-radius: 3px;
+        }
+        .calc-input:focus { border-color: var(--gold); outline: none; }
+        .calc-input[readonly] { border-style: dashed; color: var(--gold); font-weight: bold; }
+        
+        .calc-result-text { font-family: var(--font-serif); font-size: 1.3rem; color: var(--gold-bright); margin-top: 15px; min-height: 38px; }
+
+        /* SECCIÓN: CONTACTO Y UBICACIÓN */
+        .contacto-layout { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 50px; }
+        .info-card { background-color: var(--bg-navy-light); padding: 40px; border-left: 3px solid var(--gold); }
+        .info-item { margin-bottom: 30px; }
+        .info-item h3 { font-size: 1.3rem; margin-bottom: 5px; }
+        .info-item p, .info-item a { color: var(--text-muted); text-decoration: none; font-size: 1.1rem; }
+        .info-item a:hover { color: var(--gold-bright); }
+
+        .siesta-badge {
+            display: inline-block;
+            margin-top: 10px;
+            padding: 6px 15px;
+            background-color: var(--bg-navy-dark);
+            border: 1px dashed var(--gold-muted);
+            color: var(--gold-bright);
+            font-family: var(--font-serif);
+            font-size: 0.95rem;
+        }
+
+        /* PIE DE PÁGINA */
+        footer {
+            background-color: var(--bg-navy-dark);
+            text-align: center;
+            padding: 40px;
+            font-size: 0.85rem;
+            color: rgba(240, 244, 248, 0.4);
+            border-top: 1px solid rgba(212, 175, 55, 0.1);
+            letter-spacing: 1px;
+        }
+
+        /* --- ANIMACIONES --- */
+        @keyframes fadeIn { to { opacity: 1; } }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+
+        @media (max-width: 768px) {
+            .hero-logo { font-size: 3.5rem; }
+            .section-title { font-size: 2.2rem; }
+            section { padding: 80px 6%; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- PANTALLA DE CARGA ORIGINAL -->
+    <div id="splash-screen">
+        <div class="splash-logo">TEMPUS</div>
+        <div class="gear-loader"></div>
+    </div>
+
+    <!-- BOTÓN MENÚ DE TRES LÍNEAS ADAPTATIVO -->
+    <button class="burger-btn" id="menuBtn" onclick="toggleMenu()" aria-label="Abrir menú">
+        <span class="burger-line line-1"></span>
+        <span class="burger-line line-2"></span>
+        <span class="burger-line line-3"></span>
+    </button>
+
+    <!-- CAPA OSCURA AL ABRIR MENÚ -->
+    <div class="menu-overlay" onclick="toggleMenu()"></div>
+
+    <!-- NAVEGACIÓN DESPLEGABLE -->
+    <nav class="nav-menu">
+        <a href="#inicio" onclick="toggleMenu()">Inicio</a>
+        <a href="#quienes-somos" onclick="toggleMenu()">Quiénes Somos</a>
+        <a href="#colecciones" onclick="toggleMenu()">Colecciones</a>
+        <a href="#taller" onclick="toggleMenu()">El Taller</a>
+        <a href="#contacto" onclick="toggleMenu()">Contacto</a>
+    </nav>
+
+    <!-- SECCIÓN 1: INICIO / PORTADA -->
+    <section id="inicio">
+        <h1 class="hero-logo">TEMPUS</h1>
+        <div class="hero-divider"></div>
+        <p class="hero-slogan">Horología clásica</p>
+    </section>
+
+    <!-- SECCIÓN 2: QUIÉNES SOMOS -->
+    <section id="quienes-somos">
+        <div class="content-box">
+            <h2 class="section-title">Quiénes Somos</h2>
+            <p class="highlight-text">
+                Detrás de Tempus se encuentra la visión de su legendario fundador, Don Diego Martínez Vélez. Con una trayectoria vital única que fusiona la precisión milimétrica de la ingeniería agrónoma, la estrategia y templanza del baloncesto de alta competición, y una pasión inquebrantable por la alta horología.
+            </p>
+            <p>
+                Don Diego ha dedicado años de su vida al estudio minucioso de los engranajes y el paso del tiempo. Nuestra filosofía no entiende de prisas: nos basamos en la perfección absoluta, el trato clásico y respetuoso con el cliente, y el culto a la artesanía más fina. Aquí, cada segundo cuenta una historia.
+            </p>
+        </div>
+    </section>
+
+    <!-- SECCIÓN 3: COLECCIONES (CATÁLOGO) -->
+    <section id="colecciones">
+        <h2 class="section-title">Nuestras Colecciones Curadas</h2>
+        
+        <div class="grid-colecciones">
+            <!-- Colección AliExpress -->
+            <div class="card">
+                <div class="card-img-container">
+                    <img src="https://i.postimg.cc/52SRRFcd/518s-MPs-YIOL-AC-UY900.jpg" alt="Colección AliExpress">
+                </div>
+                <div class="card-content">
+                    <h3 class="card-title">Colección AliExpress</h3>
+                    <p><strong>La Conquista de las Rutas Orientales.</strong> En un alarde de audacia logística internacional, hemos desafiado los confines del comercio global para traerle una selección minuciosamente importada que explora el fenómeno de la reventa contemporánea. Relojes inspirados en grandes diseños, accesibles y con un estilo audaz que ha sobrevivido a las más duras travesías transoceánicas en contenedores de mercancías.</p>
+                </div>
+            </div>
+
+            <!-- Colección Anticuallas -->
+            <div class="card">
+                <div class="card-img-container">
+                    <img src="https://i.postimg.cc/fRfrr04h/images-(6).jpg" alt="Colección Anticuallas">
+                </div>
+                <div class="card-content">
+                    <h3 class="card-title">Colección Anticuallas</h3>
+                    <p><strong>Los Guardianes del Olvido.</strong> Joyas del pasado que Don Diego, en un acto de puro salvamento arqueológico, ha ido rescatando de las garras del tiempo y almacenando heroicamente a lo largo de décadas. Piezas con pátina, alma y un desgaste que demuestra que han sobrevivido a batallas cotidianas. Un recorrido histórico inigualable que solo los verdaderos amantes del riesgo sabrán apreciar.</p>
+                </div>
+            </div>
+
+            <!-- Colección Chanchullos -->
+            <div class="card">
+                <div class="card-img-container">
+                    <img src="https://i.postimg.cc/RZLDDnr9/is-this-the-ugliest-watch-ever-created-ive-been-on-a-v0-cu2iyilavfra1.jpg" alt="Colección Chanchullos">
+                </div>
+                <div class="card-content">
+                    <h3 class="card-title">Colección Chanchullos</h3>
+                    <p>La indiscutible joya de la corona. Toda esta épica nace de una incursión memorable: la compra por parte de su cuñado de una nave industrial abandonada que perteneció en su día a un joyero. Desafiando el polvo, las telarañas y los candados del olvido, Don Diego se adentró en el lugar para rescatar heroicamente un lote de relojes de lujo que habían quedado desamparados. Estaban completamente hechos polvo y destartalados, pero tras pasar por sus manos expertas, han sido restaurados con un rigor quirúrgico hasta recuperar el esplendor que hoy contempla.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SECCIÓN 4: EL TALLER -->
+    <section id="taller">
+        <h2 class="section-title">El Taller: El Corazón de Tempus</h2>
+        <div class="taller-layout">
+            <div class="taller-info">
+                <p class="highlight-text">No delegamos en máquinas frías ni en cadenas de montaje genéricas; en Tempus creemos en el factor humano y en la intervención divina del artesano.</p>
+                <p>Absolutamente todas las reparaciones y milagros son realizados a mano por Don Diego, aplicando la máxima calidad y un rigor técnico implacable.</p>
+                
+                <!-- CALCULADORA DE AHORRO -->
+                <div class="calc-box">
+                    <h3 style="font-size: 1.4rem; margin-bottom: 15px; font-family: var(--font-serif); color: var(--gold);">Calcula tu ahorro</h3>
+                    <div class="calc-flex">
+                        <div class="calc-field">
+                            <label for="precioOtro">Lo que te cuesta en otras relojerías</label>
+                            <input type="number" id="precioOtro" class="calc-input" placeholder="Introduce precio en €">
+                        </div>
+                        <div class="calc-field">
+                            <label for="precioNosotros">Lo que te cuesta con nosotros</label>
+                            <input type="text" id="precioNosotros" class="calc-input" readonly placeholder="Resultado">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <ul class="taller-services">
+                <li>Reparación y ajuste de mecanismos complejos y calibres automáticos.</li>
+                <li>Restauración artesanal de esferas y pulido de cajas castigadas por el tiempo.</li>
+                <li>Sustitución y adaptaciones a medida de correas de piel y brazaletes.</li>
+                <li>Diagnosis completa de precisión.</li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- SECCIÓN 5: CONTACTO Y UBICACIÓN -->
+    <section id="contacto">
+        <h2 class="section-title">Visítenos en la Sede Central</h2>
+        <div class="contacto-layout">
+            
+            <div class="info-card">
+                <div class="info-item">
+                    <h3>Ubicación</h3>
+                    <p>Santa Ana, Cartagena (Murcia)</p>
+                </div>
+                <div class="info-item">
+                    <h3>Teléfono de atención</h3>
+                    <p><a href="tel:+34654540318">+34 654 54 03 18</a></p>
+                </div>
+                <div class="info-item">
+                    <h3>Horario de Atención Clásica</h3>
+                    <p><strong>Mañanas:</strong> 06:00 a 16:00 h.</p>
+                    <div class="siesta-badge">16:00 a 18:30 h. · Cerrado por Sagrada Siesta</div>
+                    <p style="margin-top: 10px;"><strong>Tardes y Noches:</strong> 18:30 a 23:30 h.</p>
+                    <div class="siesta-badge">23:30 a 06:00 h. · Descanso Nocturno</div>
+                </div>
+            </div>
+
+            <!-- CALCULADORA DE DISPONIBILIDAD (SIESTA) -->
+            <div class="info-card" style="display: flex; flex-direction: column; justify-content: center;">
+                <h3>¿Está disponible Don Diego?</h3>
+                <p style="margin-top: 5px; margin-bottom: 20px; font-size: 0.95rem;">Escribe la hora a la que piensas venir para comprobar si el maestro artesano está operativo o en reposo.</p>
+                <div class="calc-field">
+                    <label for="horaCheck">Planificar Hora de Visita</label>
+                    <input type="time" id="horaCheck" class="calc-input">
+                </div>
+                <div id="resultadoSiesta" class="calc-result-text"></div>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- PIE DE PÁGINA -->
+    <footer>
+        <p>&copy; 2026 TEMPUS - Horología Clásica. Todos los derechos reservados por Don Diego Martínez Vélez.</p>
+    </footer>
+
+    <!-- LOGICA EN JAVASCRIPT RESTAURADA -->
+    <script>
+        // Lógica de carga exacta de la primera versión
+        window.addEventListener('DOMContentLoaded', () => {
+            const splash = document.getElementById('splash-screen');
+            setTimeout(() => {
+                splash.style.opacity = '0';
+                splash.style.filter = 'blur(10px)';
+                setTimeout(() => {
+                    splash.style.display = 'none';
+                }, 800);
+            }, 2500);
+        });
+
+        // Control del Menú lateral
+        function toggleMenu() {
+            const burgerBtn = document.querySelector('.burger-btn');
+            const navMenu = document.querySelector('.nav-menu');
+            const overlay = document.querySelector('.menu-overlay');
+            
+            burgerBtn.classList.toggle('active');
+            navMenu.classList.toggle('active');
+            overlay.classList.toggle('active');
+        }
+
+        // Transición del grosor del menú con scroll avanzado (>80px)
+        window.addEventListener('scroll', () => {
+            const menuBtn = document.getElementById('menuBtn');
+            if (window.scrollY > 80) {
+                menuBtn.classList.add('scrolled');
+            } else {
+                menuBtn.classList.remove('scrolled');
+            }
+        });
+
+        // Lógica interactiva: Calculadora de Ahorro
+        document.getElementById('precioOtro').addEventListener('input', function() {
+            const val = parseInt(this.value);
+            const res = document.getElementById('precioNosotros');
+            
+            if (isNaN(val) || this.value === "") {
+                res.value = "";
+            } else if (val <= 25) {
+                res.value = "No te flipes";
+            } else {
+                res.value = (val - 25) + " €";
+            }
+        });
+
+        // Lógica interactiva: Calculadora de Siesta y descanso completo
+        document.getElementById('horaCheck').addEventListener('input', function() {
+            const time = this.value.split(':');
+            if (time.length < 2) return;
+            
+            const h = parseInt(time[0]);
+            const m = parseInt(time[1]);
+            const res = document.getElementById('resultadoSiesta');
+            
+            const minutosTotales = (h * 60) + m;
+            
+            const inicioSiesta = (16 * 60);         // 16:00
+            const finSiesta = (18 * 60) + 30;       // 18:30
+            const inicioNoche = (23 * 60) + 30;     // 23:30
+            const finNoche = (6 * 60);              // 06:00
+
+            let durmiendo = false;
+
+            if (minutosTotales >= inicioSiesta && minutosTotales < finSiesta) {
+                durmiendo = true;
+            }
+            if (minutosTotales >= inicioNoche || minutosTotales < finNoche) {
+                durmiendo = true;
+            }
+
+            if (durmiendo) {
+                res.style.color = 'var(--gold-muted)';
+                res.innerText = "Don Diego está en fase de reposo absoluto y regeneración artesanal.";
+            } else {
+                res.style.color = 'var(--gold-bright)';
+                res.innerText = "El taller está plenamente operativo. Don Diego le atenderá con la máxima precisión.";
+            }
+        });
+    </script>
+</body>
+</html>
